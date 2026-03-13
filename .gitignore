@@ -1,0 +1,32 @@
+# Environment
+.env
+.env.local
+.env.production
+
+# Local config (chứa secrets, không commit)
+**/application-local.yml
+
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+
+# Docs
+.docs/
+
+# Claude Code
+.claude/
+
+# Logs
+*.log
+
+# Jar
+*.jar
