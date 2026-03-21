@@ -1,0 +1,27 @@
+# Profile: integration
+# Dùng cho @ActiveProfiles("integration") trong Integration Tests.
+# Kết nối tới PostgreSQL thật đang chạy qua docker-compose.
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/practice_db
+    username: practice_user
+    password: practice_pass
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      # validate: Hibernate chỉ kiểm tra schema, không tự tạo/xóa bảng.
+      # Schema đã được tạo sẵn bởi Flyway (chạy qua api-portal).
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
+
+logging:
+  level:
+    root: WARN
+    com.practice: INFO
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    org.springframework.test: WARN
+    org.springframework.boot: WARN

@@ -1,5 +1,6 @@
 package com.practice.user.infrastructure.persistence.postgresql.adapter;
 
+import com.practice.user.domain.exception.UserConflictException;
 import com.practice.user.domain.model.User;
 import com.practice.user.domain.port.out.IUserRepository;
 import com.practice.user.domain.valueobject.EmailVO;
@@ -8,6 +9,7 @@ import com.practice.user.infrastructure.persistence.postgresql.entity.UserJpaEnt
 import com.practice.user.infrastructure.persistence.postgresql.mapper.UserPersistenceMapper;
 import com.practice.user.infrastructure.persistence.postgresql.repository.IUserJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -22,9 +24,14 @@ public class UserPostgresqlAdapter implements IUserRepository {
 
     @Override
     public User save(User user) {
-        UserJpaEntity entity      = mapper.toJpaEntity(user);       // 1. convert → JPA
-        UserJpaEntity savedEntity = userJpaRepository.save(entity); // 2. lưu vào DB
-        return mapper.toDomain(savedEntity);                        // 3. convert → domain
+        try {
+            UserJpaEntity entity      = mapper.toJpaEntity(user);       // 1. convert → JPA
+            UserJpaEntity savedEntity = userJpaRepository.save(entity); // 2. lưu vào DB
+            return mapper.toDomain(savedEntity);                        // 3. convert → domain
+        } catch (DataIntegrityViolationException ex) {
+            // Safety-net cho TOCTOU: concurrent request vượt qua pre-check → DB unique constraint bắt được
+            throw new UserConflictException("User already exists (concurrent registration detected)");
+        }
     }
 
     @Override

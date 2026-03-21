@@ -24,6 +24,7 @@ target/
 
 # Claude Code
 .claude/
+.roadmap/
 
 # Logs
 *.log

@@ -1,78 +1,34 @@
-# UserDomainConfig — Active Recall
+# UserDomainConfig — Spring Configuration
 
----
+## Mục đích
 
-## Q1: Tại sao cần `UserDomainConfig`?
+`UserDomainConfig` là một **Spring `@Configuration`** — đóng vai trò cầu nối giữa tầng `domain/` và Spring IoC container.
 
-<details>
-<summary>Trả lời</summary>
+`UserDomainService` nằm trong `domain/` nên không có `@Service`, không biết Spring tồn tại. `UserDomainConfig` tạo bean thủ công bằng `@Bean` và truyền dependency vào constructor — giữ cho domain sạch khỏi framework.
 
-`UserDomainService` là pure Java (không có `@Service`) → Spring không biết nó tồn tại → không tạo bean.
-
-`UserDomainConfig` dùng `@Bean` để **đăng ký thủ công** `UserDomainService` vào Spring container.
-
-</details>
-
----
-
-## Q2: Nếu không có `UserDomainConfig`, lỗi gì xảy ra?
-
-<details>
-<summary>Trả lời</summary>
+## Vị trí trong kiến trúc
 
 ```
-NoSuchBeanDefinitionException: No qualifying bean of type 'UserDomainService'
+Spring IoC
+    │
+    │  @Bean (tạo thủ công)
+    ▼
+UserDomainConfig  ← infrastructure/config (biết Spring)
+    │
+    │  new UserDomainService(userRepository)
+    ▼
+UserDomainService  ← domain/ (KHÔNG biết Spring)
 ```
 
-Vì `CreateUserUseCaseImpl` inject `UserDomainService` nhưng Spring không tìm thấy bean nào.
+## Các bean được đăng ký
 
-</details>
-
----
-
-## Q3: Tại sao không để `@Service` thẳng trên `UserDomainService` cho đơn giản?
-
-<details>
-<summary>Trả lời</summary>
-
-Vì `architecture.md` quy định: **`domain/` chỉ được import `java.*`**.
-
-`@Service` là `org.springframework.stereotype.Service` → vi phạm rule.
-
-Domain phải là pure Java để có thể tách ra khỏi Spring bất cứ lúc nào.
-
-</details>
-
----
-
-## Q4: Tại sao bean registration nằm ở `infrastructure/config/` mà không phải layer khác?
-
-<details>
-<summary>Trả lời</summary>
-
-| Layer | Được import Spring? | Có nên đặt wiring? |
+| Bean | Kiểu | Mục đích |
 |---|---|---|
-| `domain/` | Không | Không |
-| `application/` | Được (dùng @Service, @Transactional) | Không — nơi điều phối logic, không phải lắp ráp |
-| `infrastructure/` | Được | **Có** — đây là nơi "lắp ráp" mọi thứ |
+| `userDomainService` | `UserDomainService` | Inject `IUserRepository` vào domain service |
+| `passwordEncoder` | `BCryptPasswordEncoder` | Hash password khi đăng ký user |
 
-`infrastructure/config/` là nơi quy ước để wire toàn bộ dependency, giống `SecurityConfig` wire `BCryptPasswordEncoder`.
+## Tại sao không dùng `@Service` trực tiếp trên `UserDomainService`?
 
-</details>
+Tầng `domain/` là **Pure Java** — không được import bất kỳ annotation Spring nào. Đây là nguyên tắc cốt lõi của DDD: domain layer độc lập với framework.
 
----
-
-## Q5: `UserDomainService` được dùng ở đâu?
-
-<details>
-<summary>Trả lời</summary>
-
-Chỉ 1 nơi: `CreateUserUseCaseImpl` (tầng `application/usecase/`).
-
-```java
-userDomainService.validateUniqueConstraints(email, username);
-```
-
-Kiểm tra email và username chưa tồn tại trong DB trước khi tạo user mới.
-
-</details>
+`UserDomainConfig` là "cánh tay nối dài" của infrastructure — đưa domain vào Spring mà không làm domain bị nhiễm Spring.

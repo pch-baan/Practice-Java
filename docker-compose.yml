@@ -28,5 +28,23 @@ services:
       postgres:
         condition: service_healthy
 
+  api-portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: practice-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/practice_db
+      DB_USERNAME: practice_user
+      DB_PASSWORD: practice_pass
+      JWT_SECRET: H8flTGx/75hhg9ywhjO8x1v/dqRkW2fOxAarfyPzlrc=
+      JWT_EXPIRATION_MS: 86400000
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:

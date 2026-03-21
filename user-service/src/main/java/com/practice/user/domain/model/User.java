@@ -22,11 +22,12 @@ public class User {
     private LocalDateTime updatedAt;
 
     // ── Factory method — the only way to create a new User ──────────────────
-    public static User create(String username, String email, String passwordHash) {
+    // Nhận VO thay vì String: caller phải validate trước (có VO mới gọi được)
+    public static User create(UsernameVO username, EmailVO email, String passwordHash) {
         return new User(
             UUID.randomUUID(),
-            UsernameVO.of(username),
-            EmailVO.of(email),
+            username,
+            email,
             PasswordHashVO.of(passwordHash),
             UserRoleEnum.USER,
             UserStatusEnum.ACTIVE,
@@ -49,6 +50,7 @@ public class User {
         );
     }
 
+    // Private Constructor
     private User(UUID id, UsernameVO username, EmailVO email, PasswordHashVO passwordHash,
         UserRoleEnum role, UserStatusEnum status,
         LocalDateTime createdAt, LocalDateTime updatedAt) {
@@ -99,6 +101,7 @@ public class User {
     }
 
     // ── Identity: equals/hashCode based on ID only ───────────────────────────
+    //  So sánh 2 User theo ID
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
