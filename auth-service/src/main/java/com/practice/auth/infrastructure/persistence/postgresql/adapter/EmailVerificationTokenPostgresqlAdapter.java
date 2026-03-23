@@ -7,6 +7,7 @@ import com.practice.auth.infrastructure.persistence.postgresql.repository.IEmail
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -24,5 +25,10 @@ public class EmailVerificationTokenPostgresqlAdapter implements IEmailVerificati
     @Override
     public Optional<EmailVerificationToken> findByTokenHash(String tokenHash) {
         return jpaRepository.findByTokenHash(tokenHash).map(mapper::toDomain);
+    }
+
+    @Override
+    public void deleteAllExpiredBefore(LocalDateTime cutoff) {
+        jpaRepository.deleteAllByExpiresAtBefore(cutoff);
     }
 }

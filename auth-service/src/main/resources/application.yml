@@ -5,3 +5,7 @@ spring:
 jwt:
   secret: ${JWT_SECRET:practice-secret-key-must-be-at-least-256-bits-long}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}  # 24 hours
+
+auth:
+  email-verification:
+    expiration-hours: 48

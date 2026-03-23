@@ -1,6 +1,6 @@
 package com.practice.auth.infrastructure.external;
 
-import com.practice.auth.domain.port.out.ICreateUserPort;
+import com.practice.auth.application.port.out.ICreateUserPort;
 import com.practice.user.application.dto.CreateUserCommandDto;
 import com.practice.user.application.port.in.ICreateUserUseCase;
 import lombok.RequiredArgsConstructor;

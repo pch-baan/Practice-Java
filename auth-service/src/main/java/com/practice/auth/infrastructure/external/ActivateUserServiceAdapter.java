@@ -1,6 +1,6 @@
 package com.practice.auth.infrastructure.external;
 
-import com.practice.auth.domain.port.out.IActivateUserPort;
+import com.practice.auth.application.port.out.IActivateUserPort;
 import com.practice.user.application.port.in.IActivateUserUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;

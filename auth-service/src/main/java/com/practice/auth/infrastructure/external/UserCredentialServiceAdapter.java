@@ -1,7 +1,7 @@
 package com.practice.auth.infrastructure.external;
 
 import com.practice.auth.domain.model.UserCredential;
-import com.practice.auth.domain.port.out.IUserCredentialPort;
+import com.practice.auth.application.port.out.IUserCredentialPort;
 import com.practice.user.application.port.in.IGetUserCredentialUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;

@@ -1,4 +1,4 @@
-package com.practice.auth.domain.port.out;
+package com.practice.auth.application.port.out;
 
 import com.practice.auth.domain.model.UserCredential;
 

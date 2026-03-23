@@ -6,7 +6,7 @@ import com.practice.auth.application.port.out.IJwtPort;
 import com.practice.auth.domain.exception.AuthDomainException;
 import com.practice.auth.domain.model.EmailVerificationToken;
 import com.practice.auth.domain.model.RefreshToken;
-import com.practice.auth.domain.port.out.IActivateUserPort;
+import com.practice.auth.application.port.out.IActivateUserPort;
 import com.practice.auth.domain.port.out.IEmailVerificationTokenRepository;
 import com.practice.auth.domain.port.out.IRefreshTokenRepository;
 import com.practice.auth.domain.service.AuthDomainService;
@@ -15,11 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import com.practice.auth.application.util.HashUtils;
+
 import java.time.LocalDateTime;
-import java.util.HexFormat;
 import java.util.UUID;
 
 @Service
@@ -40,7 +38,7 @@ public class VerifyEmailUseCaseImpl implements IVerifyEmailUseCase {
     @Override
     public AuthTokenDto execute(String rawToken) {
         // ① tìm token theo hash
-        String tokenHash = sha256(rawToken);
+        String tokenHash = HashUtils.sha256(rawToken);
         EmailVerificationToken token = emailVerificationTokenRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> new AuthDomainException("Invalid verification token"));
 
@@ -56,7 +54,7 @@ public class VerifyEmailUseCaseImpl implements IVerifyEmailUseCase {
 
         // ⑤ phát JWT + refresh token (giống login)
         String rawRefreshToken = UUID.randomUUID().toString();
-        String refreshTokenHash = sha256(rawRefreshToken);
+        String refreshTokenHash = HashUtils.sha256(rawRefreshToken);
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(refreshTokenExpirationDays);
         refreshTokenRepository.save(RefreshToken.create(token.getUserId(), refreshTokenHash, expiresAt));
 
@@ -70,13 +68,4 @@ public class VerifyEmailUseCaseImpl implements IVerifyEmailUseCase {
         return "USER";
     }
 
-    private static String sha256(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
-    }
 }

@@ -8,7 +8,7 @@ import com.practice.auth.domain.exception.AuthDomainException;
 import com.practice.auth.domain.model.RefreshToken;
 import com.practice.auth.domain.model.UserCredential;
 import com.practice.auth.domain.port.out.IRefreshTokenRepository;
-import com.practice.auth.domain.port.out.IUserCredentialPort;
+import com.practice.auth.application.port.out.IUserCredentialPort;
 import com.practice.auth.domain.service.AuthDomainService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,11 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import com.practice.auth.application.util.HashUtils;
+
 import java.time.LocalDateTime;
-import java.util.HexFormat;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -61,7 +59,7 @@ public class LoginUseCaseImpl implements ILoginUseCase {
         String rawToken = UUID.randomUUID().toString();
 
         // ⑤ hash for storage (never store raw token in DB)
-        String tokenHash = sha256(rawToken);
+        String tokenHash = HashUtils.sha256(rawToken);
 
         // ⑥ create domain entity
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(refreshTokenExpirationDays);
@@ -77,13 +75,4 @@ public class LoginUseCaseImpl implements ILoginUseCase {
         return new AuthTokenDto(accessToken, rawToken, "Bearer", jwtPort.getExpirationMs());
     }
 
-    private static String sha256(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
-    }
 }

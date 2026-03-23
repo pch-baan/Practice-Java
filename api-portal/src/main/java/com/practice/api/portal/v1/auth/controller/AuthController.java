@@ -32,9 +32,10 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
-        registerUseCase.execute(authApiMapper.toRegisterCommand(request));
-        return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .body(new RegisterResponse("Please check your email to verify your account"));
+        var command = authApiMapper.toRegisterCommand(request);
+        registerUseCase.execute(command);
+        var response = new RegisterResponse("Please check your email to verify your account");
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 
     @GetMapping("/verify-email")
