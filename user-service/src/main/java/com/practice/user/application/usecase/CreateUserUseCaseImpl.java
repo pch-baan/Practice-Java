@@ -15,7 +15,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+/**
+ * [REFERENCE ONLY — KHÔNG DÙNG TRONG PRODUCTION]
+ *
+ * Giữ lại để đối chiếu với CreateUserUseCaseImplV2.
+ *
+ * Vấn đề: passwordEncoder.encode() nằm TRONG @Transactional
+ * → DB connection bị giữ trong suốt thời gian BCrypt hash (~300ms)
+ * → Dưới high load, connection pool cạn kiệt (pool=10, timeout=5s → lỗi khi > 160 req đồng thời)
+ *
+ * Xem chi tiết:
+ *   - docs/high-load-issues.md
+ *   - docs/connection-pool-exhaustion-analysis.md
+ *   - CreateUserConnectionPoolExhaustionTest.java
+ */
+// @Service  ← đã tắt, bean không được đăng ký vào Spring context
 @RequiredArgsConstructor
 public class CreateUserUseCaseImpl implements ICreateUserUseCase {
 

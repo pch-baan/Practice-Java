@@ -3,28 +3,45 @@ package com.practice.api.portal.v1.auth.controller;
 import com.practice.api.portal.v1.auth.mapper.AuthApiMapper;
 import com.practice.api.portal.v1.auth.request.LoginRequest;
 import com.practice.api.portal.v1.auth.request.RefreshTokenRequest;
+import com.practice.api.portal.v1.auth.request.RegisterRequest;
 import com.practice.api.portal.v1.auth.response.AuthTokenResponse;
+import com.practice.api.portal.v1.auth.response.RegisterResponse;
 import com.practice.auth.application.port.in.ILoginUseCase;
 import com.practice.auth.application.port.in.ILogoutUseCase;
 import com.practice.auth.application.port.in.IRefreshTokenUseCase;
+import com.practice.auth.application.port.in.IRegisterUseCase;
+import com.practice.auth.application.port.in.IVerifyEmailUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
+    private final IRegisterUseCase registerUseCase;
+    private final IVerifyEmailUseCase verifyEmailUseCase;
     private final ILoginUseCase loginUseCase;
     private final IRefreshTokenUseCase refreshTokenUseCase;
     private final ILogoutUseCase logoutUseCase;
     private final AuthApiMapper authApiMapper;
+
+    @PostMapping("/register")
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        registerUseCase.execute(authApiMapper.toRegisterCommand(request));
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(new RegisterResponse("Please check your email to verify your account"));
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<AuthTokenResponse> verifyEmail(@RequestParam String token) {
+        var dto = verifyEmailUseCase.execute(token);
+        return ResponseEntity.ok(authApiMapper.toResponse(dto));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthTokenResponse> login(@Valid @RequestBody LoginRequest request) {

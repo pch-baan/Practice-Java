@@ -26,7 +26,7 @@ public class UserPostgresqlAdapter implements IUserRepository {
     public User save(User user) {
         try {
             UserJpaEntity entity      = mapper.toJpaEntity(user);       // 1. convert → JPA
-            UserJpaEntity savedEntity = userJpaRepository.save(entity); // 2. lưu vào DB
+            UserJpaEntity savedEntity = userJpaRepository.saveAndFlush(entity); // 2. lưu vào DB (flush ngay để bắt constraint violation)
             return mapper.toDomain(savedEntity);                        // 3. convert → domain
         } catch (DataIntegrityViolationException ex) {
             // Safety-net cho TOCTOU: concurrent request vượt qua pre-check → DB unique constraint bắt được

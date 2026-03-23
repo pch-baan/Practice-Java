@@ -30,7 +30,7 @@ public class User {
             email,
             PasswordHashVO.of(passwordHash),
             UserRoleEnum.USER,
-            UserStatusEnum.ACTIVE,
+            UserStatusEnum.PENDING,
             LocalDateTime.now(),
             LocalDateTime.now()
         );

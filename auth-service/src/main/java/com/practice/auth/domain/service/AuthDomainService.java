@@ -1,6 +1,7 @@
 package com.practice.auth.domain.service;
 
 import com.practice.auth.domain.exception.AuthDomainException;
+import com.practice.auth.domain.model.EmailVerificationToken;
 import com.practice.auth.domain.model.RefreshToken;
 import com.practice.auth.domain.model.UserCredential;
 
@@ -15,6 +16,12 @@ public class AuthDomainService {
     public void validateRefreshToken(RefreshToken token) {
         if (!token.isValid()) {
             throw new AuthDomainException("Refresh token is expired or revoked");
+        }
+    }
+
+    public void validateVerificationToken(EmailVerificationToken token) {
+        if (!token.isValid()) {
+            throw new AuthDomainException("Verification token is invalid or expired");
         }
     }
 }

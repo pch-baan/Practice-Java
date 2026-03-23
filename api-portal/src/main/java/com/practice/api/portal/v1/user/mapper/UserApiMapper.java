@@ -43,6 +43,7 @@ public class UserApiMapper {
         return switch (status) {
             case ACTIVE   -> UserStatusResponse.ACTIVE;
             case INACTIVE -> UserStatusResponse.INACTIVE;
+            case PENDING  -> UserStatusResponse.PENDING;
         };
     }
 }
