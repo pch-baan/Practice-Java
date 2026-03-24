@@ -6,9 +6,19 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = "com.practice")
-@EnableJpaRepositories(basePackages = "com.practice")
-@EntityScan(basePackages = "com.practice")
+@SpringBootApplication(scanBasePackages = {
+        "com.practice.api.portal",
+        "com.practice.auth",
+        "com.practice.user"
+})
+@EnableJpaRepositories(basePackages = {
+        "com.practice.user.infrastructure",
+        "com.practice.auth.infrastructure"
+})
+@EntityScan(basePackages = {
+        "com.practice.user.infrastructure",
+        "com.practice.auth.infrastructure"
+})
 @EnableScheduling
 public class ApiPortalApplication {
     public static void main(String[] args) {

@@ -1,6 +1,6 @@
-package com.practice.auth.infrastructure.email;
+package com.practice.worker.infrastructure.email;
 
-import com.practice.auth.application.port.out.IEmailPort;
+import com.practice.worker.application.port.IWorkerEmailPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Conditional;
@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 @Primary
 @Component
 @RequiredArgsConstructor
-@Conditional(MailHostConfiguredCondition.class)
-public class JavaMailSenderAdapter implements IEmailPort {
+@Conditional(WorkerMailHostConfiguredCondition.class)
+public class WorkerMailSenderAdapter implements IWorkerEmailPort {
 
     private final JavaMailSender mailSender;
 

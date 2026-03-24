@@ -2,11 +2,10 @@ package com.practice.worker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication(scanBasePackages = {
-        "com.practice.worker",
-        "com.practice.auth.infrastructure.email"
-})
+@SpringBootApplication
+@EnableScheduling
 public class WorkerServiceApplication {
 
     public static void main(String[] args) {

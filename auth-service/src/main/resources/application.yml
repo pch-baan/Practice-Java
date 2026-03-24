@@ -15,7 +15,7 @@ jwt:
 auth:
   email-verification:
     expiration-hours: 48
-  messaging:
+  producer:
     user-registered:
       exchange:    auth.exchange
       routing-key: user.registered

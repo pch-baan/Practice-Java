@@ -13,10 +13,10 @@ public class RabbitMQUserRegisteredPublisher implements IUserRegisteredPublisher
 
     private final RabbitTemplate rabbitTemplate;
 
-    @Value("${auth.messaging.user-registered.exchange}")
+    @Value("${auth.producer.user-registered.exchange}")
     private String exchange;
 
-    @Value("${auth.messaging.user-registered.routing-key}")
+    @Value("${auth.producer.user-registered.routing-key}")
     private String routingKey;
 
     @Override

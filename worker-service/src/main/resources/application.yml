@@ -28,8 +28,12 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
 
 worker:
-  messaging:
+  consumer:
+    dlx:
+      exchange: worker.dlx
     user-registered:
-      queue:       notification.user.registered
-      exchange:    auth.exchange
-      routing-key: user.registered
+      queue:           notification.user.registered
+      exchange:        auth.exchange
+      routing-key:     user.registered
+      dlq:             notification.user.registered.dlq
+      dlq-routing-key: notification.user.registered.failed

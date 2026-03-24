@@ -48,6 +48,9 @@ services:
 #    build:
 #      context: .
 #      dockerfile: Dockerfile
+#      args:
+#        TARGET_SERVICE: api-portal
+#        EXPOSE_PORT: 8080
 #    container_name: practice-api
 #    restart: unless-stopped
 #    ports:
@@ -62,6 +65,25 @@ services:
 #    depends_on:
 #      postgres:
 #        condition: service_healthy
+#      rabbitmq:
+#        condition: service_healthy
+#
+#  worker-service:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#      args:
+#        TARGET_SERVICE: worker-service
+#        EXPOSE_PORT: 8083
+#    container_name: practice-worker
+#    restart: unless-stopped
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      RABBITMQ_HOST: rabbitmq
+#      MAIL_HOST: ""
+#      APP_BASE_URL: http://api-portal:8080
+#    depends_on:
 #      rabbitmq:
 #        condition: service_healthy
 

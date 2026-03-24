@@ -14,7 +14,7 @@ public class RabbitMQConfig {
 
     @Bean("authExchange")
     public TopicExchange authExchange(
-            @Value("${auth.messaging.user-registered.exchange}") String exchangeName) {
+            @Value("${auth.producer.user-registered.exchange}") String exchangeName) {
         return new TopicExchange(exchangeName);
     }
 

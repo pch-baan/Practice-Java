@@ -1,12 +1,10 @@
 package com.practice.worker.listeners.auth;
 
-import com.practice.auth.application.event.UserRegisteredEvent;
-import com.practice.auth.application.port.out.IEmailPort;
+import com.practice.worker.application.port.IWorkerEmailPort;
+import com.practice.worker.infrastructure.idempotency.ProcessedMessageTracker;
 import lombok.RequiredArgsConstructor;
-import org.springframework.amqp.core.ExchangeTypes;
-import org.springframework.amqp.rabbit.annotation.Exchange;
-import org.springframework.amqp.rabbit.annotation.Queue;
-import org.springframework.amqp.rabbit.annotation.QueueBinding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -14,17 +12,19 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class UserRegisteredNotificationConsumer {
 
-    private final IEmailPort emailPort;
+    private static final Logger log = LoggerFactory.getLogger(UserRegisteredNotificationConsumer.class);
 
-    @RabbitListener(
-            bindings = @QueueBinding(
-                    value    = @Queue(value = "${worker.messaging.user-registered.queue}", durable = "true"),
-                    exchange = @Exchange(value = "${worker.messaging.user-registered.exchange}", type = ExchangeTypes.TOPIC),
-                    key      = "${worker.messaging.user-registered.routing-key}"
-            ),
-            containerFactory = "defaultListenerFactory"
-    )
-    public void handleUserRegistered(UserRegisteredEvent dto) {
-        emailPort.sendVerificationEmail(dto.email(), dto.rawToken());
+    private final IWorkerEmailPort emailPort;
+    private final ProcessedMessageTracker tracker;
+
+    // Queue is declared programmatically in WorkerRabbitConfig (with DLQ args).
+    // Retry + dead-lettering handled by defaultListenerFactory.
+    @RabbitListener(queues = "${worker.consumer.user-registered.queue}", containerFactory = "defaultListenerFactory")
+    public void handleUserRegistered(UserRegisteredMessage message) {
+        if (!tracker.tryMarkAsProcessed(message.rawToken())) {
+            log.warn("Duplicate message — email already sent to {}, skipping", message.email());
+            return;
+        }
+        emailPort.sendVerificationEmail(message.email(), message.rawToken());
     }
 }
