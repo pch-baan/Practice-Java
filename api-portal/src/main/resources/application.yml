@@ -37,6 +37,13 @@ spring:
     validate-on-migrate: true
     out-of-order: false
 
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+
 server:
   port: 8080
 
@@ -49,3 +56,11 @@ springdoc:
 jwt:
   secret: ${JWT_SECRET:H8flTGx/75hhg9ywhjO8x1v/dqRkW2fOxAarfyPzlrc=}
   expiration-ms: ${JWT_EXPIRATION_MS:86400000}  # 24 hours
+
+auth:
+  email-verification:
+    expiration-hours: 48
+  messaging:
+    user-registered:
+      exchange:    auth.exchange
+      routing-key: user.registered

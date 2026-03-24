@@ -6,7 +6,7 @@
 
   <parent>
     <groupId>com.practice</groupId>
-    <artifactId>practice-services</artifactId>
+    <artifactId>mid-size-services</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
@@ -56,7 +56,13 @@
       <artifactId>jjwt-jackson</artifactId>
     </dependency>
 
-    <!-- Email -->
+    <!-- RabbitMQ -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-amqp</artifactId>
+    </dependency>
+
+    <!-- Email sender -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-mail</artifactId>

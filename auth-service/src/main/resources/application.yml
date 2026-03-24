@@ -1,6 +1,12 @@
 spring:
   application:
     name: auth-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
 
 jwt:
   secret: ${JWT_SECRET:practice-secret-key-must-be-at-least-256-bits-long}
@@ -9,3 +15,7 @@ jwt:
 auth:
   email-verification:
     expiration-hours: 48
+  messaging:
+    user-registered:
+      exchange:    auth.exchange
+      routing-key: user.registered

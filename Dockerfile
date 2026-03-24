@@ -10,6 +10,7 @@ COPY pom.xml .
 COPY user-service/pom.xml user-service/
 COPY auth-service/pom.xml auth-service/
 COPY api-portal/pom.xml api-portal/
+COPY sandbox/pom.xml sandbox/
 
 # Download dependencies (cached unless pom changes)
 RUN mvn dependency:go-offline -q

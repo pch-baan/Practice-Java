@@ -3,17 +3,16 @@ package com.practice.auth.infrastructure.email;
 import com.practice.auth.application.port.out.IEmailPort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.context.annotation.Primary;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 @Primary
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "spring.mail.host")
-@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+@Conditional(MailHostConfiguredCondition.class)
 public class JavaMailSenderAdapter implements IEmailPort {
 
     private final JavaMailSender mailSender;

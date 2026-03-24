@@ -1,22 +1,22 @@
 package com.practice.auth.application.usecase;
 
 import com.practice.auth.application.dto.RegisterCommandDto;
+import com.practice.auth.application.event.UserRegisteredEvent;
 import com.practice.auth.application.port.in.IRegisterUseCase;
-import com.practice.auth.application.port.out.IEmailPort;
-import com.practice.auth.domain.model.EmailVerificationToken;
 import com.practice.auth.application.port.out.ICreateUserPort;
 import com.practice.auth.application.port.out.ICreateUserPort.CreatedUserResult;
-import com.practice.auth.domain.port.out.IEmailVerificationTokenRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.practice.auth.application.util.HashUtils;
-
+import com.practice.auth.domain.model.EmailVerificationToken;
+import com.practice.auth.domain.port.out.IEmailVerificationTokenRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-//@Service
+@Service
 @Transactional
 @RequiredArgsConstructor
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
@@ -24,7 +24,7 @@ public class RegisterUseCaseImpl implements IRegisterUseCase {
 
     private final ICreateUserPort createUserPort;
     private final IEmailVerificationTokenRepository emailVerificationTokenRepository;
-    private final IEmailPort emailPort;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${auth.email-verification.expiration-hours:24}")
     private int verificationExpirationHours;
@@ -44,8 +44,8 @@ public class RegisterUseCaseImpl implements IRegisterUseCase {
         emailVerificationTokenRepository.save(
                 EmailVerificationToken.create(created.userId(), tokenHash, expiresAt));
 
-        // ④ gửi raw token đến email user
-        emailPort.sendVerificationEmail(created.email(), rawToken);
+        // ④ publish event — email sẽ được gửi SAU KHI transaction commit
+        eventPublisher.publishEvent(new UserRegisteredEvent(created.email(), rawToken));
     }
 
 }

@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 /**
- * Fallback dùng khi spring.mail.host chưa được cấu hình (môi trường dev/test).
- * In verification link ra log thay vì gửi email thật.
+ * Fallback used when spring.mail.host is not configured (dev/test environment).
+ * Prints verification link to log instead of sending a real email.
  */
 @Component
 public class NoOpEmailAdapter implements IEmailPort {
