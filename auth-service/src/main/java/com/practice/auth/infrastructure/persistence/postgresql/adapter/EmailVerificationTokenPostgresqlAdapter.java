@@ -8,7 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,6 +27,16 @@ public class EmailVerificationTokenPostgresqlAdapter implements IEmailVerificati
     @Override
     public Optional<EmailVerificationToken> findByTokenHash(String tokenHash) {
         return jpaRepository.findByTokenHash(tokenHash).map(mapper::toDomain);
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public List<UUID> findUserIdsByExpiredBefore(LocalDateTime cutoff) {
+        return jpaRepository.findUserIdsByExpiresAtBefore(cutoff);
     }
 
     @Override

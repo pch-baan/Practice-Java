@@ -1,7 +1,7 @@
 # Flow: Đăng ký tài khoản (có Email Verification)
 
 Hai bước tách biệt:
-- `POST /api/v1/auth/register` — tạo user + gửi email xác thực
+- `POST /api/v1/auth/register` — tạo user + publish event → gửi email xác thực (async qua RabbitMQ)
 - `GET  /api/v1/auth/verify-email?token=xxx` — kích hoạt tài khoản + phát JWT
 
 ---
@@ -33,7 +33,8 @@ POST /api/v1/auth/register
 │  ③ tokenHash = sha256(rawToken)                                 │
 │  ④ EmailVerificationToken.create(userId, tokenHash, +24h)       │
 │  ⑤ emailVerificationTokenRepository.save(token)                │
-│  ⑥ emailPort.sendVerificationEmail(email, rawToken)             │
+│  ⑥ eventPublisher.publishEvent(                                 │
+│       new UserRegisteredEvent(email, rawToken))                 │
 │     return void                                                 │
 └───────┬─────────────────────────────────────────────────────────┘
         │
@@ -57,7 +58,7 @@ POST /api/v1/auth/register
 │                                                                 │
 │  TransactionTemplate (tham gia TX-1):                           │
 │    ├─ userRepository.save(User.create(...))                     │
-│    │       └─ User.create() → status = PENDING  ← thay đổi    │
+│    │       └─ User.create() → status = PENDING                  │
 │    │       └─ saveAndFlush() → INSERT users                     │
 │    │       └─ DataIntegrityViolationException                   │
 │    │              └─ → UserConflictException (409)              │
@@ -73,7 +74,7 @@ POST /api/v1/auth/register
                                │ quay lại RegisterUseCaseImpl
                                ▼
               ┌─────────────────────────────────────┐
-              │  ② → ⑥ Verification token + email  │
+              │  ② → ⑥ Verification token + event  │
               │                                     │
               │  rawToken  = UUID (128-bit)         │
               │  tokenHash = SHA-256(rawToken)      │
@@ -84,8 +85,10 @@ POST /api/v1/auth/register
               │  )                                  │
               │  → INSERT email_verification_tokens │
               │                                     │
-              │  emailPort.send(email, rawToken)    │
-              │  → SMTP gửi link xác thực           │
+              │  eventPublisher.publishEvent(       │
+              │    UserRegisteredEvent(             │
+              │      email, rawToken))              │
+              │  → event queued in Spring context   │
               └────────────┬────────────────────────┘
                            │ void
                            ▼
@@ -96,6 +99,53 @@ POST /api/v1/auth/register
               │    email to verify your account"   │
               │  }                                 │
               └────────────────────────────────────┘
+                           │
+                    TX-1 COMMIT ✓
+                           │
+╔══════════════════════════▼═════════════════════════════════════╗
+║  @TransactionalEventListener(AFTER_COMMIT)                     ║
+║  UserRegisteredEventListener.handle()                          ║
+║  (chỉ chạy sau khi TX-1 commit thành công,                     ║
+║   không chạy nếu TX-1 rollback → không ghost messages)         ║
+╚══════════════════════════╦═════════════════════════════════════╝
+                           ║
+                           ▼
+┌──────────────────────────────────────────────────────────────┐
+│  RabbitMQUserRegisteredPublisher.publish()                   │
+│  rabbitTemplate.convertAndSend(                              │
+│    exchange:   "auth.exchange"                               │
+│    routingKey: "user.registered"                             │
+│    body:       { email, rawToken } as JSON)                  │
+└──────────────────────────┬───────────────────────────────────┘
+                           │
+┌──────────────────────────▼───────────────────────────────────┐
+│                    🐰 RabbitMQ                                │
+│  Exchange: auth.exchange (TOPIC)                             │
+│      │                                                       │
+│      │ routing: user.registered                              │
+│      ▼                                                       │
+│  Queue: notification.user.registered                         │
+│      │                                                       │
+│      │ (nếu fail 3 lần → exponential backoff 1s→2s→4s)      │
+│      │ (sau 3 lần → DLX → DLQ)                              │
+│      ▼                                                       │
+│  DLQ: notification.user.registered.dlq                       │
+└──────────────────────────┬───────────────────────────────────┘
+                           │
+┌──────────────────────────▼───────────────────────────────────┐
+│              worker-service :8083                            │
+│  UserRegisteredNotificationConsumer                          │
+│  @RabbitListener(queue = "notification.user.registered")     │
+│                                                              │
+│  ProcessedMessageTracker.tryMarkAsProcessed(rawToken)        │
+│    ├─ false → duplicate → log warning → skip                 │
+│    └─ true  → IWorkerEmailPort.sendVerificationEmail(        │
+│                 email, rawToken)                             │
+│                   ├─ WorkerMailSenderAdapter   (SMTP)        │
+│                   │    link: /verify-email?token=<rawToken>  │
+│                   └─ WorkerNoOpEmailAdapter    (dev/test)    │
+│                        log.warn("[DEV] token: ...")          │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -183,7 +233,11 @@ RegisterRequest              (api-portal, @Valid)
   → CreatedUserResult        (CreateUserServiceAdapter map lại)
   → EmailVerificationToken   (EmailVerificationToken.create)
   → EmailVerificationTokenJpaEntity  (INSERT email_verification_tokens)
-  → SMTP email               (JavaMailSenderAdapter)
+  → UserRegisteredEvent      (publishEvent — queued in Spring)
+       [TX-1 COMMIT]
+  → RabbitMQ message         (UserRegisteredEventListener → AFTER_COMMIT)
+  → UserRegisteredMessage    (worker-service deserialize JSON)
+  → SMTP email               (WorkerMailSenderAdapter)
   → HTTP 202 { message }
 ```
 
@@ -209,16 +263,32 @@ RegisterRequest              (api-portal, @Valid)
 
 ```
 POST /register — TX-1:
-  ├─ INSERT users          (status = PENDING)
+  ├─ INSERT users                       (status = PENDING)
   ├─ INSERT user_profiles
   ├─ INSERT email_verification_tokens
-  └─ SMTP send             ← ngoài DB, nhưng trong method
+  └─ publishEvent(UserRegisteredEvent)  ← chỉ queued, chưa gửi RabbitMQ
+       │
+       TX-1 COMMIT ✓
+       │
+       └─ @AFTER_COMMIT: gửi message lên RabbitMQ (async)
+              └─ worker-service gửi email (async)
 
 GET /verify-email — TX-2:
   ├─ UPDATE email_verification_tokens SET used = true
   ├─ UPDATE users SET status = ACTIVE
   └─ INSERT refresh_tokens
 
-Nếu TX-1 rollback → user không tồn tại, email không được gửi ✓
+Nếu TX-1 rollback → user không tồn tại, RabbitMQ KHÔNG nhận message ✓
 Nếu TX-2 rollback → token vẫn valid, user vẫn PENDING → có thể thử lại ✓
+```
+
+---
+
+## Key Safety Guarantees
+
+```
+① @AFTER_COMMIT   → không gửi RabbitMQ nếu DB rollback (no ghost messages)
+② ProcessedMessageTracker → không gửi email trùng lần 2 (idempotency)
+③ Chỉ lưu tokenHash vào DB, rawToken chỉ đi qua event/email (security)
+④ DLQ + retry     → không mất message nếu worker-service tạm thời down
 ```

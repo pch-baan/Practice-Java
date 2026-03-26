@@ -1,4 +1,4 @@
-package com.practice.worker.listeners.auth;
+package com.practice.worker.infrastructure.messaging.consumer.auth;
 
 import com.practice.worker.application.port.IWorkerEmailPort;
 import com.practice.worker.infrastructure.idempotency.ProcessedMessageTracker;
@@ -19,7 +19,8 @@ public class UserRegisteredNotificationConsumer {
 
     // Queue is declared programmatically in WorkerRabbitConfig (with DLQ args).
     // Retry + dead-lettering handled by defaultListenerFactory.
-    @RabbitListener(queues = "${worker.consumer.user-registered.queue}", containerFactory = "defaultListenerFactory")
+    @RabbitListener(queues = "${worker.consumer.user-registered.queue}", containerFactory =
+        "defaultListenerFactory", concurrency = "1-8")
     public void handleUserRegistered(UserRegisteredMessage message) {
         if (!tracker.tryMarkAsProcessed(message.rawToken())) {
             log.warn("Duplicate message — email already sent to {}, skipping", message.email());

@@ -1,4 +1,4 @@
-package com.practice.worker.listeners.auth;
+package com.practice.worker.infrastructure.messaging.consumer.auth;
 
 /**
  * Worker-side representation of the user.registered RabbitMQ message.

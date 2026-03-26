@@ -45,9 +45,8 @@ public class VerifyEmailUseCaseImpl implements IVerifyEmailUseCase {
         // ② validate (chưa dùng, chưa hết hạn)
         authDomainService.validateVerificationToken(token);
 
-        // ③ đánh dấu đã dùng
-        token.markAsUsed();
-        emailVerificationTokenRepository.save(token);
+        // ③ xóa token — đã dùng xong, không cần giữ lại
+        emailVerificationTokenRepository.deleteById(token.getId());
 
         // ④ kích hoạt user — status PENDING → ACTIVE
         activateUserPort.activate(token.getUserId());

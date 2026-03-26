@@ -95,6 +95,12 @@ public class WorkerRabbitConfig {
      * After all attempts fail: RejectAndDontRequeue → message routed to DLX/DLQ.
      * setDefaultRequeueRejected(false): prevents accidental re-queue on uncaught exception.
      */
+    /**
+     * Factory for I/O-bound queues (email, HTTP calls, etc.).
+     * concurrentConsumers=3: 3 threads start immediately.
+     * maxConcurrentConsumers=8: scale up to 8 under load.
+     * I/O-bound workload: threads spend ~90% waiting → high concurrency is safe.
+     */
     @Bean("defaultListenerFactory")
     public SimpleRabbitListenerContainerFactory defaultListenerFactory(
             ConnectionFactory connectionFactory,
@@ -103,6 +109,7 @@ public class WorkerRabbitConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(converter);
         factory.setDefaultRequeueRejected(false);
+        factory.setPrefetchCount(10);
         factory.setAdviceChain(retryInterceptor());
         return factory;
     }

@@ -1,5 +1,6 @@
 package com.practice.user.infrastructure.persistence.postgresql.adapter;
 
+import com.practice.user.domain.enums.UserStatusEnum;
 import com.practice.user.domain.exception.UserConflictException;
 import com.practice.user.domain.model.User;
 import com.practice.user.domain.port.out.IUserRepository;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -57,5 +59,10 @@ public class UserPostgresqlAdapter implements IUserRepository {
     @Override
     public Optional<User> findByEmail(EmailVO email) {
         return userJpaRepository.findByEmail(email.getValue()).map(mapper::toDomain);
+    }
+
+    @Override
+    public void deleteAllPendingByIds(List<UUID> userIds) {
+        userJpaRepository.deleteAllByIdInAndStatus(userIds, UserStatusEnum.PENDING);
     }
 }

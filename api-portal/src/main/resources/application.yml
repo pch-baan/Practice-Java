@@ -43,6 +43,7 @@ spring:
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: /
+    publisher-confirm-type: correlated   # async ACK/NACK from broker
 
 server:
   port: 8080
