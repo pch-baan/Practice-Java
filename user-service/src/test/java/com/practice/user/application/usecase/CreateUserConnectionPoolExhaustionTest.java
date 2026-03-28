@@ -3,7 +3,6 @@ package com.practice.user.application.usecase;
 import com.practice.user.application.dto.CreateUserCommandDto;
 import com.practice.user.application.dto.UserResponseDto;
 import com.practice.user.application.port.in.ICreateUserUseCase;
-import com.practice.user.domain.exception.UserDomainException;
 import com.practice.user.infrastructure.persistence.postgresql.repository.IUserJpaRepository;
 import com.practice.user.infrastructure.persistence.postgresql.repository.IUserProfileJpaRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -126,7 +125,7 @@ class CreateUserConnectionPoolExhaustionTest {
     }
 
     @Test
-    @DisplayName("[High Load - Pool=10, Timeout=5s, BCrypt=300ms] > 160 request đồng thời → pool exhaustion")
+    @DisplayName("[High Load - Pool=10, Timeout=5s, BCrypt=300ms] 165 request đồng thời → không pool exhaustion (V3: BCrypt ngoài transaction)")
     void execute_moreThan160ConcurrentRequests_exhaustsConnectionPool() throws InterruptedException {
         // Ngưỡng tính toán: 160 request an toàn, 161+ bắt đầu lỗi
         // Gửi 165 request (5 trên ngưỡng) để kết quả rõ ràng
@@ -171,19 +170,15 @@ class CreateUserConnectionPoolExhaustionTest {
 
         // ── Assert ────────────────────────────────────────────────────────────
 
-        // Batch 17 (request 161-165) chờ ~5280ms > timeout 5000ms → phải fail
+        // V3: BCrypt chạy NGOÀI transaction → hold time chỉ ~20ms (2 INSERT)
+        // Max burst = 10 + floor(5000/20) × 10 = 2,510 request >> 165
+        // → Tất cả request phải thành công, không ai bị timeout
         assertThat(failures)
-                .as("Request 161-165 chờ > 5000ms → phải thất bại do connection timeout")
-                .isNotEmpty();
+                .as("V3: BCrypt ngoài transaction → không pool exhaustion, failures phải rỗng")
+                .isEmpty();
 
-        // ~160 request đầu (batch 1-16) chờ < 5000ms → phải thành công
         assertThat(successes)
-                .as("~160 request đầu phải thành công (chờ < 5000ms)")
-                .hasSizeGreaterThanOrEqualTo(150);
-
-        // Lỗi phải là infrastructure (connection timeout), KHÔNG phải domain logic
-        assertThat(failures)
-                .as("Failure phải là lỗi infrastructure, không phải UserDomainException")
-                .allSatisfy(e -> assertThat(e).isNotInstanceOf(UserDomainException.class));
+                .as("V3: tất cả %d request phải thành công", threadCount)
+                .hasSize(threadCount);
     }
 }

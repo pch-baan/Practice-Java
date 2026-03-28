@@ -31,7 +31,13 @@ public class UserPostgresqlAdapter implements IUserRepository {
             UserJpaEntity savedEntity = userJpaRepository.saveAndFlush(entity); // 2. lưu vào DB (flush ngay để bắt constraint violation)
             return mapper.toDomain(savedEntity);                        // 3. convert → domain
         } catch (DataIntegrityViolationException ex) {
-            // Safety-net cho TOCTOU: concurrent request vượt qua pre-check → DB unique constraint bắt được
+            String msg = ex.getMostSpecificCause().getMessage();
+            if (msg != null && msg.contains("uq_users_email")) {
+                throw new UserConflictException("Email already exists");
+            }
+            if (msg != null && msg.contains("uq_users_username")) {
+                throw new UserConflictException("Username already exists");
+            }
             throw new UserConflictException("User already exists (concurrent registration detected)");
         }
     }

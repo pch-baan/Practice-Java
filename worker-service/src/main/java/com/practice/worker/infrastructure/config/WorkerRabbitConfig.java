@@ -58,6 +58,7 @@ public class WorkerRabbitConfig {
             @Value("${worker.consumer.dlx.exchange}") String dlxExchange,
             @Value("${worker.consumer.user-registered.dlq-routing-key}") String dlqRoutingKey) {
         return QueueBuilder.durable(queueName)
+                .quorum()
                 .withArgument("x-dead-letter-exchange", dlxExchange)
                 .withArgument("x-dead-letter-routing-key", dlqRoutingKey)
                 .build();
@@ -67,7 +68,7 @@ public class WorkerRabbitConfig {
     @Bean("userRegisteredDlq")
     public Queue userRegisteredDlq(
             @Value("${worker.consumer.user-registered.dlq}") String dlqName) {
-        return QueueBuilder.durable(dlqName).build();
+        return QueueBuilder.durable(dlqName).quorum().build();
     }
 
     // ── Bindings ─────────────────────────────────────────────────────────────

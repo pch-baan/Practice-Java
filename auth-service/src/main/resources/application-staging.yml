@@ -1,0 +1,4 @@
+spring:
+  rabbitmq:
+    addresses: ${RABBITMQ_ADDRESSES}    # Required: e.g. "rabbit1:5672,rabbit2:5672,rabbit3:5672"
+    virtual-host: ${RABBITMQ_VHOST:/staging}

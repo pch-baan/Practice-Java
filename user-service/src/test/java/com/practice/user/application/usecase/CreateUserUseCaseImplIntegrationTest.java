@@ -110,15 +110,15 @@ class CreateUserUseCaseImplIntegrationTest {
     }
 
     @Test
-    @DisplayName("[State] User mới tạo phải có status = ACTIVE")
+    @DisplayName("[State] User mới tạo phải có status = PENDING (chờ xác thực email)")
     void execute_success_userShouldHaveStatusACTIVE() {
-        log.info("▶ [STATE] Kiểm tra user mới tạo có status = ACTIVE");
+        log.info("▶ [STATE] Kiểm tra user mới tạo có status = PENDING (email verification flow)");
         var command = new CreateUserCommandDto("hieu123", "hieu@test.com", "Secret@123");
 
         UserResponseDto result = createUserUseCase.execute(command);
 
         log.info("  ✔ status = {}", result.status());
-        assertThat(result.status()).isEqualTo(UserStatusEnum.ACTIVE);
+        assertThat(result.status()).isEqualTo(UserStatusEnum.PENDING);
     }
 
     @Test

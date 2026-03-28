@@ -18,16 +18,77 @@ services:
       timeout: 5s
       retries: 5
 
-  rabbitmq:
+  # ─── RabbitMQ 3-node cluster ──────────────────────────────────────────────
+  # Erlang cookie must be identical across all nodes (cluster auth mechanism).
+  # rabbitmq1 starts first; rabbitmq2 and rabbitmq3 join once rabbitmq1 is healthy.
+  # Management UI available on each node: 15672 / 15673 / 15674.
+
+  rabbitmq1:
     image: rabbitmq:4-management-alpine
-    container_name: practice-rabbitmq
+    hostname: rabbitmq1
+    container_name: practice-rabbitmq1
     restart: unless-stopped
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "PRACTICE_ERLANG_COOKIE"
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /dev
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbitmq1_data:/var/lib/rabbitmq
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq2:
+    image: rabbitmq:4-management-alpine
+    hostname: rabbitmq2
+    container_name: practice-rabbitmq2
+    restart: unless-stopped
     environment:
+      RABBITMQ_ERLANG_COOKIE: "PRACTICE_ERLANG_COOKIE"
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /dev
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbitmq2_data:/var/lib/rabbitmq
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    depends_on:
+      rabbitmq1:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq3:
+    image: rabbitmq:4-management-alpine
+    hostname: rabbitmq3
+    container_name: practice-rabbitmq3
+    restart: unless-stopped
+    environment:
+      RABBITMQ_ERLANG_COOKIE: "PRACTICE_ERLANG_COOKIE"
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /dev
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbitmq3_data:/var/lib/rabbitmq
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    depends_on:
+      rabbitmq1:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "ping"]
       interval: 10s
@@ -61,11 +122,11 @@ services:
 #      DB_PASSWORD: practice_pass
 #      JWT_SECRET: H8flTGx/75hhg9ywhjO8x1v/dqRkW2fOxAarfyPzlrc=
 #      JWT_EXPIRATION_MS: 86400000
-#      RABBITMQ_HOST: rabbitmq
+#      RABBITMQ_ADDRESSES: rabbitmq1:5672,rabbitmq2:5672,rabbitmq3:5672
 #    depends_on:
 #      postgres:
 #        condition: service_healthy
-#      rabbitmq:
+#      rabbitmq1:
 #        condition: service_healthy
 #
 #  worker-service:
@@ -80,12 +141,15 @@ services:
 #    ports:
 #      - "8083:8083"
 #    environment:
-#      RABBITMQ_HOST: rabbitmq
+#      RABBITMQ_ADDRESSES: rabbitmq1:5672,rabbitmq2:5672,rabbitmq3:5672
 #      MAIL_HOST: ""
 #      APP_BASE_URL: http://api-portal:8080
 #    depends_on:
-#      rabbitmq:
+#      rabbitmq1:
 #        condition: service_healthy
 
 volumes:
   postgres_data:
+  rabbitmq1_data:
+  rabbitmq2_data:
+  rabbitmq3_data:
